@@ -52,7 +52,7 @@ const mergeAllNonNil = R.compose(R.mergeAll, R.map(omitNilValues));
 
 const config = mergeAllNonNil([
     defaultConfig,
-    readConfig("config.toml"),
+    readConfig(R.defaultTo("config.toml", envConfigFor("CONFIG_FILE") as string)),
     environmentConfig
 ]) as unknown as Config;
 const client = getClient(config.homeserverUrl, config.accessToken, new SimpleFsStorageProvider(config.syncStateFile));
