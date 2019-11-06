@@ -1,0 +1,4 @@
+#homeserverUrl = "https://matrix.org"
+accessToken = "YOUR ACCESS TOKEN HERE"  # See https://t2bot.io/docs/access_tokens/
+#syncStateFile = "mx-youtube-describe-bot.sync.json"
+youTubeApiKey = "YOUR YOUTUBE API KEY HERE"  # See https://developers.google.com/youtube/v3/getting-started
