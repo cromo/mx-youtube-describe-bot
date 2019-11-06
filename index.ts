@@ -11,6 +11,13 @@ interface Config {
     youTubeApiKey: string;
 }
 
+const defaultConfig: Config = {
+    homeserverUrl: "https://matrix.org",
+    accessToken: "YOUR ACCESS TOKEN HERE",
+    syncStateFile: "mx-youtube-describe-bot.sync.json",
+    youTubeApiKey: "YOUR YOUTUBE API KEY HERE"
+};
+
 const readUtf8File = R.curryN(2, readFileSync)(R.__, {encoding: "utf-8"});
 const readConfig = R.pipe(readUtf8File, TOML.parse);
 const envConfig = R.concat("MX_YT_DESCRIBE_BOT_");
@@ -34,7 +41,20 @@ const formatIso8601Duration = R.pipe(
 )
 const formatVideoInfo = info => `${info.snippet.title} (${formatIso8601Duration(info.contentDetails.duration)})`;
 
-const config = readConfig("config.toml") as unknown as Config;
+const environmentConfig: Config = {
+    homeserverUrl: envConfigFor("HOMESERVER_URL") as string,
+    accessToken: envConfigFor("ACCESS_TOKEN") as string,
+    syncStateFile: envConfigFor("SYNC_STATE_FILE") as string,
+    youTubeApiKey: envConfigFor("YOUTUBE_API_KEY") as string
+};
+const omitNilValues = R.pickBy(R.compose(R.not, R.isNil));
+const mergeAllNonNil = R.compose(R.mergeAll, R.map(omitNilValues));
+
+const config = mergeAllNonNil([
+    defaultConfig,
+    readConfig("config.toml"),
+    environmentConfig
+]) as unknown as Config;
 const client = getClient(config.homeserverUrl, config.accessToken, new SimpleFsStorageProvider(config.syncStateFile));
 const video = youTubeVideo(config.youTubeApiKey);
 
