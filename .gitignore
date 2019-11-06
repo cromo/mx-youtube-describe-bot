@@ -59,3 +59,9 @@ typings/
 
 # next.js build output
 .next
+
+# config file with real values
+config.toml
+
+# matrix sync state
+*.sync.json
