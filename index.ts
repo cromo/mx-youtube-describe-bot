@@ -2,7 +2,7 @@ import { readFileSync } from "fs";
 import * as TOML from "@iarna/toml";
 import * as R from "ramda";
 import * as fetch from "node-fetch";
-import { MatrixClient, AutojoinRoomsMixin, SimpleFsStorageProvider } from "matrix-bot-sdk";
+import { MatrixClient, AutojoinRoomsMixin, SimpleFsStorageProvider, RichReply } from "matrix-bot-sdk";
 
 interface Config {
     homeserverUrl: string;
@@ -25,6 +25,7 @@ const youTubeLink = R.pipe(eventBody, R.match(/youtube\.com\/watch\?v=([a-zA-Z0-
 const hasYouTubeLink = R.pipe(youTubeLink, R.length, R.lt(0));
 const shouldRespond = R.allPass([hasContent, isTextMessage, hasYouTubeLink]);
 const sendNotice = R.curry((client, roomId, message) => client.sendNotice(roomId, message));
+const richReply = R.curryN(4, RichReply.createFor);
 
 const youTubeVideo = R.curry((apiKey, videoId) => fetch(`https://www.googleapis.com/youtube/v3/videos?id=${videoId}&key=${apiKey}&part=snippet,contentDetails&fields=items(id,snippet/title,contentDetails/duration)`).then(res => res.json()));
 const formatIso8601Duration = R.pipe(
@@ -42,7 +43,6 @@ client.on("room.message", async (roomId, event) => {
     if (!shouldRespond(event)) {
         return;
     }
-    const notifyRoom = sendNotice(client, roomId);
     const videoInfo = await R.pipe(
         youTubeLink,
         R.path([1]),
@@ -51,6 +51,6 @@ client.on("room.message", async (roomId, event) => {
     R.pipe(
         R.path(["items", 0]),
         formatVideoInfo,
-        notifyRoom
+        info => client.sendMessage(roomId, R.assoc("msgtype", "m.notice", richReply(roomId, event, info, info)))
     )(videoInfo);
 });
